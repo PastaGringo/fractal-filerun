@@ -1,0 +1,60 @@
+services:
+
+  filerun_db:
+    container_name: filerun_db
+    image: mariadb:10.1
+    environment:
+      MYSQL_ROOT_PASSWORD: your_mysql_root_password
+      MYSQL_USER: your_filerun_username
+      MYSQL_PASSWORD: your_filerun_password
+      MYSQL_DATABASE: your_filerun_database
+    volumes:
+      - fractal-db-volume:/var/lib/mysql
+  filerun:
+    image: filerun/filerun
+    container_name: filerun
+    environment:
+      FR_DB_HOST: filerun_db
+      FR_DB_PORT: 3306
+      FR_DB_NAME: your_filerun_database
+      FR_DB_USER: your_filerun_username
+      FR_DB_PASS: your_filerun_password
+      APACHE_RUN_USER: www-data
+      APACHE_RUN_USER_ID: 33
+      APACHE_RUN_GROUP: www-data
+      APACHE_RUN_GROUP_ID: 33
+    depends_on:
+      - filerun_db
+    links:
+      - filerun_db:filerun_db
+    #ports:
+    #  - "80:80"
+    volumes:
+      - fractal-app-volume-html:/var/www/html
+      - fractal-app-volume-files:/user-files
+
+  link:
+    image: fractalnetworks/link:latest
+    environment:
+      LINK: $LINK_DOMAIN_DEFAULT
+      TOKEN: $LINK_TOKEN_DEFAULT
+      EXPOSE: filerun:8080
+      FRACTAL_API: https://gateway.fractalnetworks.co
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - fractal-link-volume:/root/.local/share/caddy
+
+volumes:
+  fractal-app-volume-html:
+    external: true
+    name: $APP_VOLUME_NAME
+  fractal-app-volume-files:
+    external: true
+    name: $APP_VOLUME_NAME
+  fractal-db-volume:
+    external: true
+    name: $APP_VOLUME_NAME
+  fractal-link-volume:
+    external: true
+    name: $LINK_VOLUME_NAME
